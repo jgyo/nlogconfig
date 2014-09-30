@@ -18,16 +18,16 @@
 // under the License.
 // </remarks>
 
-namespace YoderZone.NLogConfig
+namespace YoderZone.Extensions.NLog
 {
 #region Imports
 
 using System;
 using System.Diagnostics.Contracts;
 
-using NLog.Conditions;
-using NLog.Targets;
-using NLog.Targets.Wrappers;
+using global::NLog.Conditions;
+using global::NLog.Targets;
+using global::NLog.Targets.Wrappers;
 
 #endregion
 

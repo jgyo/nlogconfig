@@ -18,17 +18,17 @@
 // under the License.
 // </remarks>
 
-namespace YoderZone.NLogConfig
+namespace YoderZone.Extensions.NLog
 {
 #region Imports
 
 using System;
 using System.Diagnostics.Contracts;
 
-using NLog;
-using NLog.Config;
-using NLog.Filters;
-using NLog.Targets;
+using global::NLog;
+using global::NLog.Config;
+using global::NLog.Filters;
+using global::NLog.Targets;
 
 #endregion
 
@@ -122,33 +122,6 @@ public class RuleFactory
     {
         return Rule = new LoggingRule(loggerNamePattern, minLogLevel, target);
 
-        Rule = new LoggingRule(loggerNamePattern, target);
-
-        if (LogLevel.Debug >= minLogLevel)
-        {
-            rule.EnableLoggingForLevel(LogLevel.Debug);
-        }
-        if (LogLevel.Error >= minLogLevel)
-        {
-            rule.EnableLoggingForLevel(LogLevel.Error);
-        }
-        if (LogLevel.Fatal >= minLogLevel)
-        {
-            rule.EnableLoggingForLevel(LogLevel.Fatal);
-        }
-        if (LogLevel.Info >= minLogLevel)
-        {
-            rule.EnableLoggingForLevel(LogLevel.Info);
-        }
-        if (LogLevel.Trace >= minLogLevel)
-        {
-            rule.EnableLoggingForLevel(LogLevel.Trace);
-        }
-        if (LogLevel.Warn >= minLogLevel)
-        {
-            rule.EnableLoggingForLevel(LogLevel.Warn);
-        }
-        return rule;
     }
 
     /// <summary>

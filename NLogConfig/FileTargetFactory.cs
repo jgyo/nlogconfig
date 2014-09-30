@@ -18,7 +18,7 @@
 // under the License.
 // </remarks>
 
-namespace YoderZone.NLogConfig
+namespace YoderZone.Extensions.NLog
 {
 #region Imports
 
@@ -27,8 +27,8 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Text;
 
-using NLog.Layouts;
-using NLog.Targets;
+using global::NLog.Layouts;
+using global::NLog.Targets;
 
 #endregion
 
@@ -154,13 +154,15 @@ public class FileTargetFactory
         string filePathLayout = Path.Combine(configuration.LogFilesPath,
                                              "FILENAME.LOG")
                                 .Replace("FILENAME.LOG", fileNameLayout);
+
         FileTarget = new FileTarget
         {
             FileName = new SimpleLayout(filePathLayout),
             Name = name,
             Encoding = Encoding.UTF8,
             LineEnding = LineEndingMode.CRLF,
-            CreateDirs = true
+            CreateDirs = true,
+            Layout = "${longdate}|${level:uppercase=true}|${callsite:fileName=false:includeSourcePath=false}|${message}"
         };
 
         return FileTarget;

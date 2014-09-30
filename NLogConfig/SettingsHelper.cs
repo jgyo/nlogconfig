@@ -18,7 +18,7 @@
 // under the License.
 // </remarks>
 
-namespace YoderZone.NLogConfig
+namespace YoderZone.Extensions.NLog
 {
 #region Imports
 
@@ -31,9 +31,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-using NLog;
-using NLog.Config;
-using NLog.Targets;
+using global::NLog;
+using global::NLog.Config;
+using global::NLog.Targets;
 
 #endregion
 
@@ -57,7 +57,7 @@ public class SettingsHelper
     /// <summary>
     ///     The log file name layout.
     /// </summary>
-    private const string constLogFile = "NLogConfig{shortdate}.log";
+    private const string constLogFile = "NLogConfig${shortdate}.log";
 
     /// <summary>
     ///     The class's logger name.
@@ -81,7 +81,10 @@ public class SettingsHelper
     /// <summary>
     ///     The SettingsHelper Logger for logging diagnostic messages.
     /// </summary>
-    private static readonly Logger settingsHelperLogger;
+    private static readonly Logger settingsHelperLogger = CreateLogger(
+                constLogger);
+
+    private static bool initialized;
 
     /// <summary>
     ///     A list of all configured instances still in use.
@@ -91,19 +94,21 @@ public class SettingsHelper
     /// <summary>
     ///     The is n log configuration log enabled.
     /// </summary>
-    private static bool isNLogConfigLogEnabled = true;
+    private static bool isNLogConfigLogEnabled;
 
     /// <summary>
     ///     The log configuration log level.
     /// </summary>
+    /// ###
     /// <remarks>
-    ///     Prevent all NLogConfig data from logging by setting this to LogLevel.Off.
-    ///     The default value is LogLevel.Info which will generally log a little
-    ///     information, unless exceptions are raised when used to log other programs.
-    ///     NLogConfig logging can be programmatically disabled by calling
-    ///     Setting SettingsHelper.IsNLogConfigLogEnabled to false.
+    ///     Prevent all NLogConfig data from logging by setting this to
+    ///     LogLevel.Off. The default value is LogLevel.Info which will
+    ///     generally log a little information, unless exceptions are raised
+    ///     when used to log other programs. NLogConfig logging can be
+    ///     programmatically disabled by calling Setting
+    ///     SettingsHelper.IsNLogConfigLogEnabled to false.
     /// </remarks>
-    private static LogLevel nLogConfigLogLevel = LogLevel.Info;
+    private static LogLevel nLogConfigLogLevel = LogLevel.Off;
 
     #endregion
 
@@ -133,69 +138,19 @@ public class SettingsHelper
 
     #region Constructors and Destructors
 
-    /// <summary>
-    ///     Duplicates Code within NLog.LogManager.GetCurrentClassLogger()
-    ///     to get caller information.
-    /// </summary>
     static SettingsHelper()
     {
-        // Set up a FileTarget to log NLogConfig data under AppData\YoderZone\NLogConfig.
         ApplicationDataFolder =
             Environment.GetFolderPath(
                 Environment.SpecialFolder.ApplicationData,
                 Environment.SpecialFolderOption.None);
-
-        SettingsHelper configuration = NewConfiguration(constAppName,
-                                       constCompany);
-
-        FileTarget fileTarget = FileTargetFactory.CreateFileTarget(
-                                    // Name of the target.
-                                    constTarget,
-                                    // The filename layout.
-                                    constLogFile,
-                                    // The logger's configuration instance.
-                                    configuration);
-
-        configuration.AddTarget(fileTarget, true);
-
-        LoggingRule rule = RuleFactory.CreateRule(
-                               constLogger,
-                               fileTarget,
-                               IsNLogConfigLogEnabled ? NLogConfigLogLevel : LogLevel.Off);
-
-        if (!LogManager.IsLoggingEnabled())
-        {
-            LogManager.EnableLogging();
-        }
-
-        configuration.AddRule(constRule, rule);
-
-        settingsHelperLogger = CreateLogger(constLogger);
-
-        settingsHelperLogger.Debug("{0} initialized.", constAppName);
-        settingsHelperLogger.Trace("ApplicationDataFolder = {0}",
-                                   ApplicationDataFolder);
-        settingsHelperLogger.Trace("ApplicationName       = {0}",
-                                   configuration.ApplicationName);
-        settingsHelperLogger.Trace("CompanyName           = {0}",
-                                   configuration.CompanyName);
-        settingsHelperLogger.Trace("fileTarget.Layout     = {0}",
-                                   fileTarget.Layout);
-        settingsHelperLogger.Trace("LogFilesFolder        = {0}",
-                                   configuration.LogFilesFolder);
-        settingsHelperLogger.Trace("LogFilesPath          = {0}",
-                                   configuration.LogFilesPath);
-
-        settingsHelperLogger.Info("*** {0} ***", constAppName);
-        settingsHelperLogger.Info("Copyright 2014 Gil Yoder");
-        settingsHelperLogger.Info("Licensed under Microsoft Public License (Ms-PL)");
     }
 
     /// <summary>
     ///     Prevents a default instance of the
-    ///     YoderZone.NLogConfig.SettingsHelper class from being created. Used by
-    ///     CreateLogger to configure static properties within the SettingsHelper
-    ///     class.
+    ///     YoderZone.NLogConfig.SettingsHelper class from being created.
+    ///     Used by CreateLogger to configure static properties within the
+    ///     SettingsHelper class.
     /// </summary>
     private SettingsHelper()
     {
@@ -239,8 +194,8 @@ public class SettingsHelper
     }
 
     /// <summary>
-    ///     Gets or sets a value indicating whether a n log configuration log is
-    ///     enabled.
+    ///     Gets or sets a value indicating whether a n log configuration log
+    ///     is enabled.
     /// </summary>
     /// <value>
     ///     true if a n log configuration log is enabled, false if not.
@@ -336,9 +291,9 @@ public class SettingsHelper
     public string CompanyName { get; set; }
 
     /// <summary>
-    ///     Gets or sets the pathname of the log files folder. Used to specify a
-    ///     folder name within the application folder. Note this is not the full
-    ///     path to the folder; just its name.
+    ///     Gets or sets the pathname of the log files folder. Used to
+    ///     specify a folder name within the application folder. Note this is
+    ///     not the full path to the folder; just its name.
     /// </summary>
     /// <value>
     ///     The pathname of the log files folder.
@@ -440,6 +395,18 @@ public class SettingsHelper
         }
     }
 
+    public static bool IsInternalLoggingInitialized
+    {
+        get
+        {
+            return initialized;
+        }
+        set
+        {
+            initialized = value;
+        }
+    }
+
     #endregion
 
     #region Public Methods and Operators
@@ -448,8 +415,8 @@ public class SettingsHelper
     ///     A factory method to create a class Logger.
     /// </summary>
     /// <param name="name">
-    ///     The name to give the Logger. By default this defaults to the caller's
-    ///     type name.
+    ///     The name to give the Logger. By default this defaults to the
+    ///     caller's type name.
     /// </param>
     /// <returns>
     ///     The new logger.
@@ -503,6 +470,61 @@ public class SettingsHelper
         return name;
     }
 
+    public static void InitializeInternalLogging(IEnumerable<LogLevel> levels)
+    {
+        settingsHelperLogger.Debug("Entered static method.");
+
+        if (initialized)
+        {
+            settingsHelperLogger.Info("Internal logging already initialized.");
+            return;
+        }
+
+        initialized = true;
+
+        SettingsHelper configuration = NewConfiguration(constAppName,
+                                       constCompany);
+
+        // Set up a FileTarget to log NLogConfig data under AppData\YoderZone\NLogConfig.
+        FileTarget fileTarget = FileTargetFactory.CreateFileTarget(
+                                    // Name of the target.
+                                    constTarget,
+                                    // The filename layout.
+                                    constLogFile,
+                                    // The logger's configuration instance.
+                                    configuration);
+
+        configuration.AddTarget(fileTarget, true);
+
+        LoggingRule rule = RuleFactory.CreateRule(constLogger, fileTarget,
+                           LogLevel.Off);
+
+        foreach (var logLevel in levels)
+        {
+            rule.EnableLoggingForLevel(logLevel);
+        }
+
+        configuration.AddRule(constRule, rule);
+
+        settingsHelperLogger.Trace("Internal logging initialized.");
+        settingsHelperLogger.Trace("Rule: {0}", constRule);
+        settingsHelperLogger.Trace("ApplicationDataFolder = {0}",
+                                   ApplicationDataFolder);
+        settingsHelperLogger.Trace("ApplicationName       = {0}",
+                                   configuration.ApplicationName);
+        settingsHelperLogger.Trace("CompanyName           = {0}",
+                                   configuration.CompanyName);
+        settingsHelperLogger.Trace("fileTarget.Layout     = {0}",
+                                   fileTarget.Layout);
+        settingsHelperLogger.Trace("LogFilesFolder        = {0}",
+                                   configuration.LogFilesFolder);
+        settingsHelperLogger.Trace("LogFilesPath          = {0}",
+                                   configuration.LogFilesPath);
+        settingsHelperLogger.Info("*** {0} ***", constAppName);
+        settingsHelperLogger.Info("Copyright 2014 Gil Yoder");
+        settingsHelperLogger.Info("Licensed under Microsoft Public License (Ms-PL)");
+    }
+
     /// <summary>
     ///     Creates a new NLog configuration.
     /// </summary>
@@ -523,6 +545,14 @@ public class SettingsHelper
         string companyName,
         string logFilesFolder = "logs")
     {
+        if (settingsHelperLogger != null)
+        {
+            settingsHelperLogger.Debug("Entered static method.");
+            settingsHelperLogger.Trace("applicationName: {0}", applicationName);
+            settingsHelperLogger.Trace("companyName:     {0}", companyName);
+            settingsHelperLogger.Trace("logFilesFolder:  {0}", logFilesFolder);
+        }
+
         var nLogConfiguration = new SettingsHelper
         {
             ApplicationName = applicationName,
@@ -532,6 +562,78 @@ public class SettingsHelper
 
         InstanceList.Add(applicationName, nLogConfiguration);
         return nLogConfiguration;
+    }
+
+    /// <summary>
+    ///     Sets rule level.
+    /// </summary>
+    /// <param name="applicationName">
+    ///     Name of the application.
+    /// </param>
+    /// <param name="ruleName">
+    ///     Name of the rule.
+    /// </param>
+    /// <param name="logLevel">
+    ///     The log level.
+    /// </param>
+    /// <param name="enable">
+    ///     true to enable, false to disable.
+    /// </param>
+    public static void SetRuleLevel(
+        string applicationName,
+        string ruleName,
+        LogLevel logLevel,
+        bool enable)
+    {
+        settingsHelperLogger.Debug("Entered static method.");
+
+        if (!InstanceList.ContainsKey(applicationName))
+        {
+            settingsHelperLogger.Info("Configuration instance {0} does not exist.",
+                                      applicationName);
+            return;
+        }
+
+        LoggingRule loggingRule = InstanceList[applicationName].Rules[ruleName];
+        if (enable)
+        {
+            loggingRule.EnableLoggingForLevel(logLevel);
+        }
+        else
+        {
+            loggingRule.DisableLoggingForLevel(logLevel);
+        }
+    }
+
+    /// <summary>
+    ///     Sets rule logging level.
+    /// </summary>
+    /// <param name="applicationName">
+    ///     Name of the application.
+    /// </param>
+    /// <param name="ruleName">
+    ///     Name of the rule.
+    /// </param>
+    /// <param name="logLevel">
+    ///     The log level.
+    /// </param>
+    public static void SetRuleLoggingLevel(
+        string applicationName,
+        string ruleName,
+        LogLevel logLevel)
+    {
+        LoggingRule loggingRule = InstanceList[applicationName].Rules[ruleName];
+        foreach (var item in LogLevelList)
+        {
+            if (item >= logLevel)
+            {
+                loggingRule.EnableLoggingForLevel(item);
+            }
+            else
+            {
+                loggingRule.DisableLoggingForLevel(item);
+            }
+        }
     }
 
     /// <summary>
@@ -635,6 +737,36 @@ public class SettingsHelper
     }
 
     /// <summary>
+    ///     Gets a rule.
+    /// </summary>
+    /// <param name="name">
+    ///     The name.
+    /// </param>
+    /// <returns>
+    ///     The rule.
+    /// </returns>
+    public LoggingRule GetRule(string name)
+    {
+        LoggingRule value;
+        return this.Rules.TryGetValue(name, out value) == false ? null : value;
+    }
+
+    /// <summary>
+    ///     Gets a target.
+    /// </summary>
+    /// <param name="name">
+    ///     The name.
+    /// </param>
+    /// <returns>
+    ///     The target.
+    /// </returns>
+    public Target GetTarget(string name)
+    {
+        Target value;
+        return this.Targets.TryGetValue(name, out value) == false ? null : value;
+    }
+
+    /// <summary>
     ///     Removes the specified rule.
     /// </summary>
     /// <param name="rule">
@@ -717,68 +849,10 @@ public class SettingsHelper
         this.RemoveTarget(this.targets[name], deferUpdate);
     }
 
-    #endregion
-
-    #region Methods
-
-    /// <summary>
-    ///     Sets rule logging level.
-    /// </summary>
-    /// <param name="applicationName">
-    ///     Name of the application.
-    /// </param>
-    /// <param name="ruleName">
-    ///     Name of the rule.
-    /// </param>
-    /// <param name="logLevel">
-    ///     The log level.
-    /// </param>
-    private static void SetRuleLoggingLevel(
-        string applicationName,
-        string ruleName,
-        LogLevel logLevel)
-    {
-        LoggingRule loggingRule = InstanceList[applicationName].Rules[ruleName];
-        foreach (var item in LogLevelList)
-        {
-            if (item >= logLevel)
-            {
-                loggingRule.EnableLoggingForLevel(item);
-            }
-            else
-            {
-                loggingRule.DisableLoggingForLevel(item);
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Event handler. Called by LogManager for configuration changed events.
-    /// </summary>
-    /// <param name="sender">
-    ///     Source of the event.
-    /// </param>
-    /// <param name="e">
-    ///     Logging configuration changed event information.
-    /// </param>
-    private void LogManager_ConfigurationChanged(
-        object sender,
-        LoggingConfigurationChangedEventArgs e)
-    {
-        if (e.NewConfiguration == this.Configuration)
-        {
-            return;
-        }
-
-        this.Configuration = e.NewConfiguration;
-
-        this.UpdateConfiguration();
-    }
-
     /// <summary>
     ///     Updates the configuration.
     /// </summary>
-    private void UpdateConfiguration()
+    public void UpdateConfiguration()
     {
         lock (this.configLock)
         {
@@ -801,6 +875,34 @@ public class SettingsHelper
 
             LogManager.ReconfigExistingLoggers();
         }
+    }
+
+    #endregion
+
+    #region Methods
+
+    /// <summary>
+    ///     Event handler. Called by LogManager for configuration changed
+    ///     events.
+    /// </summary>
+    /// <param name="sender">
+    ///     Source of the event.
+    /// </param>
+    /// <param name="e">
+    ///     Logging configuration changed event information.
+    /// </param>
+    private void LogManager_ConfigurationChanged(
+        object sender,
+        LoggingConfigurationChangedEventArgs e)
+    {
+        if (e.NewConfiguration == this.Configuration)
+        {
+            return;
+        }
+
+        this.Configuration = e.NewConfiguration;
+
+        this.UpdateConfiguration();
     }
 
     #endregion
