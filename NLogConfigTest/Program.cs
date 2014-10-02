@@ -21,25 +21,22 @@ namespace YoderZone.NLogConfig.Test
 {
 using NLog;
 
-using YoderZone.NLogConfig;
+using YoderZone.Extensions.NLog;
 
 /// <summary>
 /// A program to test NLogConfig.
 /// </summary>
-class Program
+static class Program
 {
     /// <summary>
     /// The logger.
     /// </summary>
-    private static Logger logger = SettingsHelper.CreateLogger();
+    private static readonly Logger logger = SettingsHelper.CreateLogger();
 
     /// <summary>
     /// Main entry-point for this application.
     /// </summary>
-    /// <param name="args">
-    /// Array of command-line argument strings.
-    /// </param>
-    static void Main(string[] args)
+    static void Main()
     {
         // Create a SettingsHelper instance by calling SettingsHelper
         // .NewConfiguration, as you see here, for each plug-in, if that
